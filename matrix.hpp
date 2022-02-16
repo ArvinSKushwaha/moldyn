@@ -194,7 +194,7 @@ std::ostream &operator<<(std::ostream& os, const Matrix<T, M, N> mat) {
         }
         os << mat(i, N - 1) << " ]\n";
     }
-    os << mat(M - 1, N - 1) << " ]";
+    os << "[ " << mat(M - 1, N - 1) << " ]";
     return os;
 }
 
