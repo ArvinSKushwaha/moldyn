@@ -1,4 +1,4 @@
-#include "input_processing.hpp"
+#include "../input_processing.hpp"
 #include <fstream>
 #include <string.h>
 
@@ -23,10 +23,10 @@ int main(int argc, const char **argv) {
         std::cerr << RED << "[Error]" << RESET << "Could not open file " << argv[1] << std::endl;
         return 1;
     }
-    std::vector<Vec<double, 3>> data = read(*input_stream);
+    std::vector<CVec<double, 3>> data = read(*input_stream);
     printf("%ld\n", data.size());
     for (auto &point : data) {
-        printf("%f %f %f\n", point[0], point[1], point[2]);
+        printf("%f %f %f\n", point(0), point(1), point(2));
     }
     return 0;
 }

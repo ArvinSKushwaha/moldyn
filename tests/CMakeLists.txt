@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g -O0 -pedantic -Wall -Wextr
 link_libraries(MolDyn)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../)
 
-add_executable(test_vec test_vec.cpp)
+add_executable(test_matrix test_matrix.cpp)
 add_executable(test_input_processing test_input_processing.cpp)
-add_test(NAME test_vec COMMAND test_vec WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_matrix COMMAND test_matrix WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_input_processing COMMAND bash -c "test_input_processing input_processing_test.txt > output_processing_test.txt; test_input_processing < output_processing_test.txt | diff - output_processing_test.txt" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
