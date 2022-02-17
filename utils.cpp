@@ -1,16 +1,17 @@
 #include "utils.hpp"
 
 float fisqrt(float x) {
-    long i;
-    float x2, y;
+    union {
+        float f;
+        long l;
+    } u;
+    float x2;
     const float threehalfs = 1.5F;
 
     x2 = x * 0.5F;
-    y = x;
-    i = *reinterpret_cast<long *>(&y);
-    i = 0x5f3759df - ( i >> 1 );
-    y = *reinterpret_cast<float *>(&i);
-    y = y * ( threehalfs - ( x2 * y * y ) );
+    u.f = x;
+    u.l = 0x5f3759df - ( u.l >> 1 );
+    u.f = u.f * ( threehalfs - ( x2 * u.f * u.f ) );
 
-    return y;
+    return u.f;
 }

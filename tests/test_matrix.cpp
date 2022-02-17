@@ -9,7 +9,7 @@ void testAdd();
 void testSubtract();
 void testMultiply();
 void testDivide();
-
+void testSlicing();
 
 void testCVecConstructor() {
     CVec<float, 3> v = {1, 2, 3};
@@ -71,6 +71,18 @@ void testDivide() {
     ASSERT(v5(0) != 6 || v5(1) != 3 || v5(2) != 2);
 }
 
+void testSlicing() {
+    Matrix<float, 3, 3> m = {
+        1, 2, 3,
+        4, 5, 6,
+        7, 8, 9
+    };
+    auto m2 = m.row(1);
+    ASSERT(m2(0) != 4 || m2(1) != 5 || m2(2) != 6);
+    auto m3 = m.col(1);
+    ASSERT(m3(0) != 2 || m3(1) != 5 || m3(2) != 8);
+}
+
 int main() {
     testCVecConstructor();
     testCVecClosure();
@@ -78,4 +90,5 @@ int main() {
     testSubtract();
     testMultiply();
     testDivide();
+    testSlicing();
 }

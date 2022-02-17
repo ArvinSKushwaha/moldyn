@@ -4,44 +4,73 @@
 #include <algorithm>
 #include <cmath>
 #include <initializer_list>
-#include <array>
+#include <vector>
 #include <iostream>
 #include <functional>
 #include <ostream>
 #include <numeric>
 #include <string>
+#include <memory>
+
+template <typename T, size_t M, size_t N>
+class Matrix;
+
+template <typename T, size_t N>
+using CVec = Matrix<T, N, 1>;
+template <typename T, size_t N>
+using RVec = Matrix<T, 1, N>;
 
 template <typename T, size_t M, size_t N>
 class Matrix {
-    private:
-        std::array<T, M * N> data;
+    public:
+        std::shared_ptr<std::vector<T>> data = std::make_shared<std::vector<T>>(M * N);
         size_t rows = M;
         size_t cols = N;
-    public:
+        size_t stride = 1;
+        size_t offset = 0;
         Matrix() = default;
-        Matrix(T val) { std::fill(data.begin(), data.end(), val); }
-        Matrix(std::initializer_list<T> list) { std::copy(list.begin(), list.end(), data.begin()); }
+        Matrix(T val) { std::fill(data->begin(), data->end(), val); }
+        Matrix(std::initializer_list<T> list) { std::copy(list.begin(), list.end(), data->begin()); }
         Matrix(const Matrix<T, M, N>& mat) : data(mat.data) {}
 
         template <typename V>
         Matrix<V, M, N> map(std::function<V(T)> f) const {
             Matrix<V, M, N> result;
-            std::transform(data.begin(), data.end(), result.data.begin(), f);
+            for (size_t i = 0; i < M; i++) {
+                for (size_t j = 0; j < N; j++) {
+                    std::cout << result(i, j) << " " << (*this)(i, j) << " " << f((*this)(i, j)) << " " << i << " " << j << " " << M << " " << N << std::endl;
+                    result(i, j) = f((*this)(i, j));
+                }
+            }
             return result;
         }
         template <typename U, typename V>
         Matrix<V, M, N> map2(Matrix<U, M, N> m2, std::function<V(T, U)> f) const {
             Matrix<V, M, N> result;
-            std::transform(data.begin(), data.end(), m2.data.begin(), result.data.begin(), f);
+            for (size_t i = 0; i < M; i++) {
+                for (size_t j = 0; j < N; j++) {
+                    result(i, j) = f((*this)(i, j), m2(i, j));
+                }
+            }
             return result;
         }
         template <typename V>
         V accumulate(V init, std::function<V(V, T)> f) const {
-            std::accumulate(data.begin(), data.end(), init, f);
+            for (size_t i = 0; i < M; i++) {
+                for (size_t j = 0; j < N; j++) {
+                    init = f(init, (*this)(i, j));
+                }
+            }
+            return init;
         }
-        template <typename V>
-        V reduce(std::function<V(V, T)> f) const {
-            std::accumulate(data.begin() + 1, data.end(), *data.begin(), f);
+        T reduce(std::function<T(T, T)> f) const {
+            T result = this(0, 0);
+            for (size_t i = 1; i < M; i++) {
+                for (size_t j = 0; j < N; j++) {
+                    if (i != 0 && j != 0) { result = f(result, (*this)(i, j)); }
+                }
+            }
+            return result;
         }
 
         Matrix<T, M, N> operator+(const Matrix<T, M, N>& mat) const {
@@ -73,7 +102,11 @@ class Matrix {
         }
 
         Matrix<T, M, N> &operator=(const Matrix<T, M, N>& mat) {
-            std::copy(mat.data.begin(), mat.data.end(), data.begin());
+            for (size_t i = 0; i < M; i++) {
+                for (size_t j = 0; j < N; j++) {
+                    (*this)(i, j) = mat(i, j);
+                }
+            }
             return *this;
         }
         Matrix<T, M, N> &operator+=(const Matrix<T, M, N>& mat) {
@@ -107,7 +140,7 @@ class Matrix {
             for (int j = 0; j < N; ++j) {
                 for (int i = 0; i < M; ++i) {
                     for (int k = 0; k < O; ++k) {
-                        result(i, k) += this(i, j) * mat(j, k);
+                        result(i, k) += (*this)(i, j) * mat(j, k);
                     }
                 }
             }
@@ -117,7 +150,7 @@ class Matrix {
             Matrix<T, N, M> result;
             for (int i = 0; i < M; ++i) {
                 for (int j = 0; j < N; ++j) {
-                    result(j, i) = this(i, j);
+                    result(j, i) = (*this)(i, j);
                 }
             }
             return result;
@@ -143,14 +176,28 @@ class Matrix {
         }
 
         T& operator()(size_t i) {
-            return data[i];
+            return (*data)[i * stride + offset];
         }
-
         T& operator()(size_t i, size_t j) {
-            return data[i * M + j];
+            std::cout << "operator() " << i << " " << j << " " << stride << " " << offset << " " << (i * M + j) * stride + offset << " " << (*data)[(i * M + j) * stride + offset] << std::endl;
+            return (*data)[(i * M + j) * stride + offset];
         }
         const T& operator()(size_t i, size_t j) const {
-            return data[i * M + j];
+            return (*data)[(i * M + j) * stride + offset];
+        }
+        RVec<T, N> row(size_t i) const {
+            RVec<T, N> result;
+            result.data = data;
+            result.offset = i * M;
+            result.stride = 1;
+            return result;
+        }
+        CVec<T, M> col(size_t j) const {
+            CVec<T, M> result;
+            result.data = data;
+            result.offset = j;
+            result.stride = 1;
+            return result;
         }
 
         T sum() const {
@@ -197,10 +244,5 @@ std::ostream &operator<<(std::ostream& os, const Matrix<T, M, N> mat) {
     os << "[ " << mat(M - 1, N - 1) << " ]";
     return os;
 }
-
-template <typename T, size_t N>
-using CVec = Matrix<T, N, 1>;
-template <typename T, size_t N>
-using RVec = Matrix<T, 1, N>;
 
 #endif
